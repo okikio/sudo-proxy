@@ -1,0 +1,10 @@
+version: "3.8"
+
+services:
+
+  movieweb-proxy:
+    build:
+      context: .
+    ports:
+      - "3256:3000"
+    restart: unless-stopped
