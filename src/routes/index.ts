@@ -11,17 +11,22 @@ import {
 } from '@/utils/turnstile';
 
 export default defineEventHandler(async (event) => {
+  const nodeRuntime = event.runtime?.node;
+
   // Handle preflight CORS requests
   if (isPreflightRequest(event)) {
     handleCors(event, {});
     // Ensure the response ends here for preflight
-    event.node.res.statusCode = 204;
-    event.node.res.end();
+    if (nodeRuntime?.res) {
+      nodeRuntime.res.statusCode = 204;
+      nodeRuntime.res.end();
+    }
+
     return;
   }
 
   // Reject any other OPTIONS requests
-  if (event.node.req.method === 'OPTIONS') {
+  if (nodeRuntime?.req?.method === 'OPTIONS') {
     throw createError({
       statusCode: 405,
       statusMessage: 'Method Not Allowed',
@@ -63,12 +68,15 @@ export default defineEventHandler(async (event) => {
       blacklistedHeaders: getBlacklistedHeaders(),
       fetchOptions: {
         redirect: 'follow',
-        headers: getProxyHeaders(event.headers),
+        headers: getProxyHeaders(event.req.headers),
         body,
       },
       onResponse(outputEvent, response) {
         const headers = getAfterResponseHeaders(response.headers, response.url);
-        setResponseHeaders(outputEvent, headers);
+        for (const [name, value] of Object.entries(headers)) {
+          event.res.headers.set(name, value);
+        }
+
         if (token) setTokenHeader(event, token);
       },
     });

@@ -5,6 +5,12 @@ export async function sendJson(ops: {
   data: Record<string, any>;
   status?: number;
 }) {
-  setResponseStatus(ops.event, ops.status ?? 200);
-  await send(ops.event, JSON.stringify(ops.data, null, 2), 'application/json');
+  ops.event.res.status = ops.status ?? 200;
+  // await send(ops.event, JSON.stringify(ops.data, null, 2), 'application/json');
+  return new Response(JSON.stringify(ops.data, null, 2), {
+    headers: new Headers([
+      ...ops.event.res.headers,
+      ["content-type", "application/json;charset=UTF-8",]
+    ])
+  })
 }

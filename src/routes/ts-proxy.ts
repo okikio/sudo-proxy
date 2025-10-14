@@ -9,30 +9,33 @@ export default defineEventHandler(async (event) => {
   if (isPreflightRequest(event)) return handleCors(event, {});
 
   if (process.env.DISABLE_M3U8 === 'true') {
-    return sendError(event, createError({
+    // return sendError(event, );
+    return createError({
       statusCode: 404,
       statusMessage: 'TS proxying is disabled'
-    }));
+    });
   }
   
   const url = getQuery(event).url as string;
   const headersParam = getQuery(event).headers as string;
   
   if (!url) {
-    return sendError(event, createError({
+    // return sendError(event, );
+    return createError({
       statusCode: 400,
       statusMessage: 'URL parameter is required'
-    }));
+    });
   }
   
   let headers = {};
   try {
     headers = headersParam ? JSON.parse(headersParam) : {};
   } catch (e) {
-    return sendError(event, createError({
+    // return sendError(event, );
+    return createError({
       statusCode: 400,
       statusMessage: 'Invalid headers format'
-    }));
+    });
   }
   
   try {
@@ -41,13 +44,18 @@ export default defineEventHandler(async (event) => {
       const cachedSegment = getCachedSegment(url);
       
       if (cachedSegment) {
-        setResponseHeaders(event, {
+        // setResponseHeaders(event, );
+        const _headers = {
           'Content-Type': cachedSegment.headers['content-type'] || 'video/mp2t',
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Headers': '*',
           'Access-Control-Allow-Methods': '*',
           'Cache-Control': 'public, max-age=3600' // Allow caching of TS segments
-        });
+        };
+
+        for (const [name, value] of Object.entries(_headers)) {
+          event.res.headers.set(name, value);
+        }
         
         return cachedSegment.data;
       }
@@ -78,9 +86,10 @@ export default defineEventHandler(async (event) => {
     return new Uint8Array(await response.arrayBuffer());
   } catch (error: any) {
     console.error('Error proxying TS file:', error);
-    return sendError(event, createError({
+    // return sendError(event, );
+    return createError({
       statusCode: error.response?.status || 500,
       statusMessage: error.message || 'Error proxying TS file'
-    }));
+    });
   }
 });

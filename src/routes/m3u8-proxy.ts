@@ -1,5 +1,3 @@
-import { setResponseHeaders } from 'h3';
-
 // Check if caching is disabled via environment variable
 const isCacheDisabled = () => process.env.DISABLE_CACHE === 'true';
 
@@ -179,20 +177,22 @@ async function proxyM3U8(event: any) {
   const headersParam = getQuery(event).headers as string;
   
   if (!url) {
-    return sendError(event, createError({
+    // return sendError(event, );
+    return createError({
       statusCode: 400,
       statusMessage: 'URL parameter is required'
-    }));
+    });
   }
   
   let headers = {};
   try {
     headers = headersParam ? JSON.parse(headersParam) : {};
   } catch (e) {
-    return sendError(event, createError({
+    // return sendError(event, );
+    return createError({
       statusCode: 400,
       statusMessage: 'Invalid headers format'
-    }));
+    });
   }
   
   try {
@@ -262,13 +262,25 @@ async function proxyM3U8(event: any) {
       }
       
       // Set appropriate headers
-      setResponseHeaders(event, {
+      // setResponseHeaders(event, {
+      //   'Content-Type': 'application/vnd.apple.mpegurl',
+      //   'Access-Control-Allow-Origin': '*',
+      //   'Access-Control-Allow-Headers': '*',
+      //   'Access-Control-Allow-Methods': '*',
+      //   'Cache-Control': 'no-cache, no-store, must-revalidate'
+      // });
+
+      const _headers = {
         'Content-Type': 'application/vnd.apple.mpegurl',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': '*',
         'Access-Control-Allow-Methods': '*',
         'Cache-Control': 'no-cache, no-store, must-revalidate'
-      });
+      };
+
+      for (const [name, value] of Object.entries(_headers)) {
+        event.res.headers.set(name, value);
+      }
       
       return newLines.join("\n");
     } else {
@@ -344,10 +356,14 @@ async function proxyM3U8(event: any) {
     }
   } catch (error: any) {
     console.error('Error proxying M3U8:', error);
-    return sendError(event, createError({
+    // return sendError(event, createError({
+    //   statusCode: 500,
+    //   statusMessage: error.message || 'Error proxying M3U8 file'
+    // }));
+    return createError({
       statusCode: 500,
       statusMessage: error.message || 'Error proxying M3U8 file'
-    }));
+    });
   }
 }
 
@@ -365,10 +381,11 @@ export default defineEventHandler(async (event) => {
   if (isPreflightRequest(event)) return handleCors(event, {});
 
   if (process.env.DISABLE_M3U8 === 'true') {
-    return sendError(event, createError({
+    // return sendError(event, );
+    return createError({
       statusCode: 404,
       statusMessage: 'M3U8 proxying is disabled'
-    }));
+    });
   }
   
   if (event.path === '/cache-stats') {

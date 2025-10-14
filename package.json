@@ -22,6 +22,7 @@
   },
   "devDependencies": {
     "@rollup/wasm-node": "^4.52.4",
+    "@types/node": "^24.7.2",
     "@typescript-eslint/eslint-plugin": "^8.46.1",
     "@typescript-eslint/parser": "^8.46.1",
     "eslint": "^9.37.0",

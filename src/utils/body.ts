@@ -7,7 +7,7 @@ export function hasBody(event: H3Event) {
 
 export async function getBodyBuffer(
   event: H3Event,
-): Promise<Buffer | undefined> {
+): Promise<ArrayBuffer | undefined> {
   if (!hasBody(event)) return;
-  return await readRawBody(event, false);
+  return await event.req.arrayBuffer();
 }
