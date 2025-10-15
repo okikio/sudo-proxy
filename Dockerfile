@@ -5,8 +5,8 @@ ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 WORKDIR /app
 
-# Build stage
-FROM base AS build
+# Dependencies stage
+FROM base AS deps
 
 COPY pnpm-lock.yaml ./
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
@@ -16,15 +16,18 @@ COPY package.json ./
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile --offline
 
-COPY . .
-RUN pnpm build
-
 # Production stage
 FROM base AS production
 
-COPY --from=build /app/.output ./.output
+# Copy node_modules from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy application source
+COPY package.json ./
+COPY . .
 
 ENV NODE_ENV=production
 EXPOSE 3000
 
-CMD ["node", ".output/server/index.mjs"]
+# Build and start at runtime to ensure env vars are available during build
+CMD pnpm run build && node .output/server/index.mjs
