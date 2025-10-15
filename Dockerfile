@@ -1,20 +1,30 @@
-FROM node:24-alpine as base
+# syntax=docker/dockerfile:1
+FROM node:24-alpine AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
 WORKDIR /app
 
-# Build layer
-FROM base as build
+# Build stage
+FROM base AS build
 
-RUN npm i -g pnpm
-COPY pnpm-lock.yaml package.json ./
-RUN pnpm install --frozen-lockfile
+COPY pnpm-lock.yaml ./
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm fetch --frozen-lockfile
+
+COPY package.json ./
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm install --frozen-lockfile --offline
+
 COPY . .
 RUN pnpm build
 
-# Production layer
-FROM base as production
+# Production stage
+FROM base AS production
 
-EXPOSE 3000
-ENV NODE_ENV=production
 COPY --from=build /app/.output ./.output
+
+ENV NODE_ENV=production
+EXPOSE 3000
 
 CMD ["node", ".output/server/index.mjs"]
