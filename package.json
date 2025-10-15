@@ -35,5 +35,6 @@
     "overrides": {
       "rollup": "npm:@rollup/wasm-node"
     }
-  }
+  },
+  "packageManager": "pnpm@10.18.3"
 }
