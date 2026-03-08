@@ -1,94 +1,75 @@
-import { setResponseHeaders } from 'h3';
 import { getBodyBuffer } from '@/utils/body';
-import {
-  getProxyHeaders,
-  getAfterResponseHeaders,
-  getBlacklistedHeaders,
-} from '@/utils/headers';
-import {
-  createTokenIfNeeded,
-  isAllowedToMakeRequest,
-  setTokenHeader,
-} from '@/utils/turnstile';
+import { getProxyHeaders, getAfterResponseHeaders } from '@/utils/headers';
+import { createTokenIfNeeded, isAllowedToMakeRequest } from '@/utils/turnstile';
+
+/** CORS headers returned on every preflight and proxied response. */
+const CORS_PREFLIGHT_HEADERS: HeadersInit = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': '*',
+  'Access-Control-Allow-Headers': '*',
+  'Access-Control-Max-Age': '86400',
+};
 
 export default defineEventHandler(async (event) => {
-  // Handle CORS preflight requests
-  // Use event.headers (normalized Headers instance) instead of event.req.headers
-  // (event.req is deprecated in h3 v2 and returns the raw Node.js IncomingMessage
-  // whose .headers is a plain object without .get())
+  // CORS preflight — web-standard Response, no Node.js APIs needed
   if (
     event.method === 'OPTIONS' &&
     event.headers.get('origin') &&
     event.headers.get('access-control-request-method')
   ) {
-    setResponseHeaders(event, {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': '*',
-      'Access-Control-Allow-Headers': '*',
-      'Access-Control-Max-Age': '86400',
+    return new Response(null, {
+      status: 204,
+      headers: CORS_PREFLIGHT_HEADERS,
     });
-    event.node.res.statusCode = 204;
-    event.node.res.end();
-    return;
   }
 
-  // Reject any other OPTIONS requests
   if (event.method === 'OPTIONS') {
-    throw createError({
-      statusCode: 405,
-      statusMessage: 'Method Not Allowed',
-    });
+    throw createError({ statusCode: 405, statusMessage: 'Method Not Allowed' });
   }
 
-  // Parse destination URL
   const destination = getQuery<{ destination?: string }>(event).destination;
   if (!destination) {
-    return await sendJson({
-      event,
-      status: 200,
-      data: {
-        message: `Proxy is working as expected (v${
-          useRuntimeConfig(event).version
-        })`,
-      },
+    return Response.json({
+      message: `Proxy is working as expected (v${
+        useRuntimeConfig(event).version
+      })`,
     });
   }
 
-  // Check if allowed to make the request
   if (!(await isAllowedToMakeRequest(event))) {
-    return await sendJson({
-      event,
-      status: 401,
-      data: {
-        error: 'Invalid or missing token',
-      },
-    });
+    return Response.json(
+      { error: 'Invalid or missing token' },
+      { status: 401 },
+    );
   }
 
-  // Read body and create token if needed
   const body = await getBodyBuffer(event);
   const token = await createTokenIfNeeded(event);
 
-  // Proxy the request
   try {
-    await specificProxyRequest(event, destination, {
-      blacklistedHeaders: getBlacklistedHeaders(),
-      fetchOptions: {
-        redirect: 'follow',
-        headers: getProxyHeaders(event.headers),
-        body,
-      },
-      onResponse(outputEvent, response) {
-        const headers = getAfterResponseHeaders(response.headers, response.url);
-        for (const [name, value] of Object.entries(headers)) {
-          event.res.headers.set(name, value);
-        }
+    const upstream = await fetch(destination, {
+      method: event.method,
+      redirect: 'follow',
+      headers: getProxyHeaders(event.headers),
+      ...(body !== undefined && { body }),
+    });
 
-        if (token) setTokenHeader(event, token);
-      },
+    // Merge upstream headers with CORS/tracking headers
+    const responseHeaders = new Headers(upstream.headers);
+    for (const [name, value] of Object.entries(
+      getAfterResponseHeaders(upstream.headers, upstream.url),
+    )) {
+      responseHeaders.set(name, value);
+    }
+    if (token) responseHeaders.set('X-Token', token);
+
+    return new Response(upstream.body, {
+      status: upstream.status,
+      statusText: upstream.statusText,
+      headers: responseHeaders,
     });
   } catch (e) {
-    console.log('Error fetching', e);
+    console.error('Error fetching', e);
     throw e;
   }
 });

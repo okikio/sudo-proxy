@@ -9,73 +9,50 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
-        
-      - uses: pnpm/action-setup@v4
-        with:
-          version: latest
 
-      - name: Get version
+      - uses: pnpm/action-setup@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Get version from package.json
         id: package-version
-        uses: martinbeentjes/npm-get-version-action@main
+        run: echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
 
       - name: Install packages
         run: pnpm install --frozen-lockfile
 
-      - name: Build for cloudflare
+      - name: Build for Cloudflare Workers
         run: pnpm build:cloudflare && cp ./.output/server/index.mjs ./cloudflare.worker.mjs
 
-      - name: Build for AWS
+      - name: Build for AWS Lambda
         run: pnpm build:aws && cd .output/server && zip -r ../../lambda.zip .
 
-      - name: Build for Node
+      - name: Build for Node.js
         run: pnpm build:node && cd .output/server && zip -r ../../nodejs.zip .
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create GitHub Release and upload assets
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.package-version.outputs.current-version }}
-          release_name: Simple-proxy v${{ steps.package-version.outputs.current-version }}
-          draft: false
-          prerelease: false
+          tag_name: v${{ steps.package-version.outputs.version }}
+          name: sudo-proxy v${{ steps.package-version.outputs.version }}
+          generate_release_notes: true
           body: |
-            Instead of downloading a package, you can also run it in docker:
+            Run with Docker:
             ```sh
-            docker run ghcr.io/movie-web/simple-proxy:${{ steps.package-version.outputs.current-version }}
+            docker run -p 3000:3000 ghcr.io/okikio/sudo-proxy:${{ steps.package-version.outputs.version }}
             ```
+          files: |
+            cloudflare.worker.mjs
+            lambda.zip
+            nodejs.zip
 
-      - name: Upload cloudflare build
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./cloudflare.worker.mjs
-          asset_name: simple-proxy-cloudflare.mjs
-          asset_content_type: text/javascript
-
-      - name: Upload AWS build
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./lambda.zip
-          asset_name: simple-proxy-aws-lambda.zip
-          asset_content_type: application/zip
-
-      - name: Upload Node build
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./nodejs.zip
-          asset_name: simple-proxy-nodejs.zip
-          asset_content_type: application/zip

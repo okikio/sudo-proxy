@@ -1,12 +1,26 @@
-version: "3.8"
-
 services:
-
   proxy:
     build:
       context: .
+    image: ghcr.io/okikio/sudo-proxy:latest
     ports:
       - "3256:3000"
     restart: unless-stopped
     env_file:
       - stack.env
+    environment:
+      PORT: "3000"
+      NODE_ENV: production
+      # ── Authentication (both must be set together) ─────────────────────────
+      # TURNSTILE_SECRET: ""   # Cloudflare Turnstile secret key
+      # JWT_SECRET: ""         # HS256 signing secret (min 32 chars recommended)
+      # ── Caching ────────────────────────────────────────────────────────────
+      # ENABLE_CACHE: "false"  # Set to "true" to enable HLS segment prefetch cache
+      # ── Feature flags ──────────────────────────────────────────────────────
+      # DISABLE_M3U8: "false"  # Set to "true" to disable /m3u8-proxy and /ts-proxy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO/dev/null http://localhost:3000/healthcheck || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

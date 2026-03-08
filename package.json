@@ -6,20 +6,19 @@
     "prepare": "nitropack prepare",
     "dev": "nitropack dev",
     "build": "nitropack build",
-    "build:cloudflare": "NITRO_PRESET=cloudflare npm run build",
-    "build:aws": "NITRO_PRESET=aws_lambda npm run build",
-    "build:node": "NITRO_PRESET=node-server npm run build",
-    "build:netlify": "NITRO_PRESET=netlify_edge npm run build",
+    "build:cloudflare": "NITRO_PRESET=cloudflare nitropack build",
+    "build:aws": "NITRO_PRESET=aws_lambda nitropack build",
+    "build:node": "NITRO_PRESET=node-server nitropack build",
+    "build:netlify": "NITRO_PRESET=netlify_edge nitropack build",
     "start": "node .output/server/index.mjs",
-    "lint": "eslint --ext .ts src/",
-    "lint:fix": "eslint --fix --ext .ts src/",
+    "lint": "eslint src/",
+    "lint:fix": "eslint --fix src/",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
-    "h3": "1.15.5",
-    "jose": "^6.1.0",
-    "nitropack": "^2.12.7"
+    "h3": "^1.15.5",
+    "nitropack": "^2.13.1"
   },
   "devDependencies": {
     "@rollup/wasm-node": "^4.52.4",
@@ -27,9 +26,7 @@
     "@typescript-eslint/eslint-plugin": "^8.46.1",
     "@typescript-eslint/parser": "^8.46.1",
     "eslint": "^9.37.0",
-    "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-prettier": "^5.5.4",
     "vitest": "^4.0.18"
   },

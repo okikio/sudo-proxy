@@ -1,4 +1,4 @@
-import { H3Event, readRawBody } from 'h3';
+import type { H3Event } from 'h3';
 
 export function hasBody(event: H3Event) {
   const method = event.method.toUpperCase();
@@ -7,7 +7,9 @@ export function hasBody(event: H3Event) {
 
 export async function getBodyBuffer(
   event: H3Event,
-): Promise<Buffer | undefined> {
-  if (!hasBody(event)) return;
-  return await readRawBody(event, false);
+): Promise<Uint8Array | undefined> {
+  if (!hasBody(event)) return undefined;
+  // readRawBody is a Nitro auto-import; returns Buffer (Uint8Array subclass)
+  const raw = await readRawBody(event, false);
+  return raw ? new Uint8Array(raw) : undefined;
 }
