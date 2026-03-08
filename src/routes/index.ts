@@ -54,8 +54,11 @@ export default defineEventHandler(async (event) => {
       ...(body !== undefined && { body }),
     });
 
-    // Merge upstream headers with CORS/tracking headers
+    // Build response headers from upstream, then overlay CORS/tracking headers.
+    // set-cookie is deleted because getAfterResponseHeaders() already remaps it
+    // to X-Set-Cookie to prevent the proxy domain from receiving upstream cookies.
     const responseHeaders = new Headers(upstream.headers);
+    responseHeaders.delete('set-cookie');
     for (const [name, value] of Object.entries(
       getAfterResponseHeaders(upstream.headers, upstream.url),
     )) {

@@ -56,7 +56,7 @@ ENV PORT=3000 \
 
 EXPOSE 3000
 
-# Health-check using Node's built-in fetch (zero extra dependencies)
+# Health-check using wget (available in node:alpine images by default)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO/dev/null "http://localhost:${PORT}/healthcheck" || exit 1
 
