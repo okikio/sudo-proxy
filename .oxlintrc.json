@@ -1,0 +1,25 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/crates/oxc_linter/src/loader/oxlintrc.schema.json",
+  "plugins": ["typescript"],
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "ignorePatterns": ["dist", ".output", ".nitro", "*.js", "*.mjs", "*.cjs"],
+  "rules": {
+    "no-console": "off",
+    "no-shadow": "off",
+    "no-restricted-syntax": "off",
+    "no-continue": "off",
+    "no-await-in-loop": "off",
+    "no-nested-ternary": "off",
+    "prefer-destructuring": "off",
+    "no-underscore-dangle": "off",
+    "consistent-return": "off",
+    "typescript/no-explicit-any": "off",
+    "typescript/no-this-alias": "off",
+    "typescript/no-empty-function": "off",
+    "typescript/no-shadow": "error",
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }]
+  }
+}

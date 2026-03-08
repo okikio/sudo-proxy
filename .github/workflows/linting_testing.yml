@@ -32,7 +32,7 @@ jobs:
       - name: Prepare for linting
         run: pnpm prepare
 
-      - name: Run ESLint
+      - name: Run oxlint + Prettier
         run: pnpm lint
 
   testing:

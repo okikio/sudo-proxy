@@ -7,7 +7,7 @@ function parseURL(req_url: string, baseUrl?: string) {
   }
 
   const match = req_url.match(
-    /^(?:(https?:)?\/\/)?(([^\/?]+?)(?::(\d{0,5})(?=[\/?]|$))?)([\/?][\S\s]*|$)/i,
+    /^(?:(https?:)?\/\/)?(([^/?]+?)(?::(\d{0,5})(?=[/?]|$))?)([/?][\S\s]*|$)/i,
   );
 
   if (!match) {
@@ -263,7 +263,7 @@ async function proxyM3U8(
         if (line.startsWith('#')) {
           if (line.startsWith('#EXT-X-KEY:')) {
             // Proxy the key URL
-            const regex = /https?:\/\/[^\""\s]+/g;
+            const regex = /https?:\/\/[^""\s]+/g;
             const keyUrl = regex.exec(line)?.[0];
             if (keyUrl) {
               const proxyKeyUrl = `${baseProxyUrl}/ts-proxy?url=${encodeURIComponent(
@@ -275,7 +275,7 @@ async function proxyM3U8(
             }
           } else if (line.startsWith('#EXT-X-MEDIA:')) {
             // Proxy alternative media URLs (like audio streams)
-            const regex = /https?:\/\/[^\""\s]+/g;
+            const regex = /https?:\/\/[^""\s]+/g;
             const mediaUrl = regex.exec(line)?.[0];
             if (mediaUrl) {
               const proxyMediaUrl = `${baseProxyUrl}/m3u8-proxy?url=${encodeURIComponent(
@@ -320,7 +320,7 @@ async function proxyM3U8(
         if (line.startsWith('#')) {
           if (line.startsWith('#EXT-X-KEY:')) {
             // Proxy the key URL
-            const regex = /https?:\/\/[^\""\s]+/g;
+            const regex = /https?:\/\/[^""\s]+/g;
             const keyUrl = regex.exec(line)?.[0];
             if (keyUrl) {
               const proxyKeyUrl = `${baseProxyUrl}/ts-proxy?url=${encodeURIComponent(
