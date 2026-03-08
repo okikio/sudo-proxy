@@ -1,3 +1,4 @@
+import { setResponseHeaders } from 'h3';
 import { getBodyBuffer } from '@/utils/body';
 import {
   getProxyHeaders,
@@ -11,22 +12,28 @@ import {
 } from '@/utils/turnstile';
 
 export default defineEventHandler(async (event) => {
-  const nodeRuntime = event.runtime?.node;
-
-  // Handle preflight CORS requests
-  if (isPreflightRequest(event)) {
-    handleCors(event, {});
-    // Ensure the response ends here for preflight
-    if (nodeRuntime?.res) {
-      nodeRuntime.res.statusCode = 204;
-      nodeRuntime.res.end();
-    }
-
+  // Handle CORS preflight requests
+  // Use event.headers (normalized Headers instance) instead of event.req.headers
+  // (event.req is deprecated in h3 v2 and returns the raw Node.js IncomingMessage
+  // whose .headers is a plain object without .get())
+  if (
+    event.method === 'OPTIONS' &&
+    event.headers.get('origin') &&
+    event.headers.get('access-control-request-method')
+  ) {
+    setResponseHeaders(event, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': '*',
+      'Access-Control-Allow-Headers': '*',
+      'Access-Control-Max-Age': '86400',
+    });
+    event.node.res.statusCode = 204;
+    event.node.res.end();
     return;
   }
 
   // Reject any other OPTIONS requests
-  if (nodeRuntime?.req?.method === 'OPTIONS') {
+  if (event.method === 'OPTIONS') {
     throw createError({
       statusCode: 405,
       statusMessage: 'Method Not Allowed',
@@ -68,7 +75,7 @@ export default defineEventHandler(async (event) => {
       blacklistedHeaders: getBlacklistedHeaders(),
       fetchOptions: {
         redirect: 'follow',
-        headers: getProxyHeaders(event.req.headers),
+        headers: getProxyHeaders(event.headers),
         body,
       },
       onResponse(outputEvent, response) {

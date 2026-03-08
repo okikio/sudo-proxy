@@ -1,4 +1,4 @@
-import { H3Event } from 'h3';
+import { H3Event, readRawBody } from 'h3';
 
 export function hasBody(event: H3Event) {
   const method = event.method.toUpperCase();
@@ -7,7 +7,7 @@ export function hasBody(event: H3Event) {
 
 export async function getBodyBuffer(
   event: H3Event,
-): Promise<ArrayBuffer | undefined> {
+): Promise<Buffer | undefined> {
   if (!hasBody(event)) return;
-  return await event.req.arrayBuffer();
+  return await readRawBody(event, false);
 }

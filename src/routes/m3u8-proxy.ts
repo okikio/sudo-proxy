@@ -262,25 +262,13 @@ async function proxyM3U8(event: any) {
       }
       
       // Set appropriate headers
-      // setResponseHeaders(event, {
-      //   'Content-Type': 'application/vnd.apple.mpegurl',
-      //   'Access-Control-Allow-Origin': '*',
-      //   'Access-Control-Allow-Headers': '*',
-      //   'Access-Control-Allow-Methods': '*',
-      //   'Cache-Control': 'no-cache, no-store, must-revalidate'
-      // });
-
-      const _headers = {
+      setResponseHeaders(event, {
         'Content-Type': 'application/vnd.apple.mpegurl',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': '*',
         'Access-Control-Allow-Methods': '*',
         'Cache-Control': 'no-cache, no-store, must-revalidate'
-      };
-
-      for (const [name, value] of Object.entries(_headers)) {
-        event.res.headers.set(name, value);
-      }
+      });
       
       return newLines.join("\n");
     } else {
@@ -377,8 +365,24 @@ export function handleCacheStats(event: any) {
 }
 
 export default defineEventHandler(async (event) => {
-  // Handle CORS preflight requests
-  if (isPreflightRequest(event)) return handleCors(event, {});
+  // Handle CORS preflight requests using event.headers (normalized Headers
+  // instance) — event.req.headers in h3 v2's Node.js adapter is a plain
+  // IncomingMessage object that has no .get() method.
+  if (
+    event.method === 'OPTIONS' &&
+    event.headers.get('origin') &&
+    event.headers.get('access-control-request-method')
+  ) {
+    setResponseHeaders(event, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': '*',
+      'Access-Control-Allow-Headers': '*',
+      'Access-Control-Max-Age': '86400',
+    });
+    event.node.res.statusCode = 204;
+    event.node.res.end();
+    return;
+  }
 
   if (process.env.DISABLE_M3U8 === 'true') {
     // return sendError(event, );
