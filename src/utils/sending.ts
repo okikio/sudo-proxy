@@ -1,11 +1,10 @@
-import { H3Event, EventHandlerRequest, setResponseStatus, setResponseHeaders } from 'h3';
-
-export async function sendJson(ops: {
-  event: H3Event<EventHandlerRequest>;
-  data: Record<string, any>;
-  status?: number;
-}) {
-  setResponseStatus(ops.event, ops.status ?? 200);
-  setResponseHeaders(ops.event, { 'content-type': 'application/json;charset=UTF-8' });
-  return JSON.stringify(ops.data, null, 2);
+/**
+ * Creates a JSON Response using the web-standard Response API.
+ * Compatible with all Nitro targets (Node.js, Cloudflare Workers, Deno, Bun).
+ */
+export function sendJson(
+  data: Record<string, unknown>,
+  status = 200,
+): Response {
+  return Response.json(data, { status });
 }
