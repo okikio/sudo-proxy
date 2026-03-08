@@ -1,8 +1,8 @@
 import { setResponseHeaders } from 'h3';
 import { getCachedSegment } from './m3u8-proxy';
 
-// Check if caching is disabled via environment variable
-const isCacheDisabled = () => process.env.DISABLE_CACHE === 'true';
+// Check if caching is enabled via environment variable (disabled by default)
+const isCacheDisabled = () => process.env.ENABLE_CACHE !== 'true';
 
 export default defineEventHandler(async (event) => {
   // Handle CORS preflight requests

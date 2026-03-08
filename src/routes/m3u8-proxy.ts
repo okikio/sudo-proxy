@@ -1,5 +1,5 @@
-// Check if caching is disabled via environment variable
-const isCacheDisabled = () => process.env.DISABLE_CACHE === 'true';
+// Check if caching is enabled via environment variable (disabled by default)
+const isCacheDisabled = () => process.env.ENABLE_CACHE !== 'true';
 
 function parseURL(req_url: string, baseUrl?: string) {
   if (baseUrl) {

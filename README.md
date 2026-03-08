@@ -1,7 +1,7 @@
 # simple-proxy
 
-Simple reverse proxy to bypass CORS, used by [movie-web](https://movie-web.app)/[P-Stream](https://pstream.org).
-Read the docs at https://docs.pstream.org/proxy/introduction
+Simple reverse proxy to bypass CORS, used by [movie-web](https://movie-web.app)/[P-Stream](https://pstream.mov).
+Read the docs at https://docs.pstream.mov/proxy/introduction
 
 ---
 
@@ -11,7 +11,7 @@ Read the docs at https://docs.pstream.org/proxy/introduction
  - bypass CORS - always allows browser to send requests through it
  - secure it with turnstile - prevent bots from using your proxy
  - parse and bypass m3u8 stream restrictions - make sure the IP is not blocked by the CDN, may need to be on a VPS.
- - Caching of tls segments (disable with DISABLE_CACHE=true in .env)
+ - Caching of tls segments (enable with ENABLE_CACHE=true in .env, disabled by default)
 
 > [!WARNING]
 > Turnstile integration only works properly with cloudflare workers as platform
